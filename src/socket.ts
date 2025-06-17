@@ -16,7 +16,6 @@ io.on("connection", (socket: Socket) => {
     });
 })
 
-
 export const emitUserPhoto = ({ userPhoto, token }: IEmitUserPhoto) => {
     io.emit("userPhoto", { "token": token, "image_base64": userPhoto });
     console.log("User photo emitted : ", userPhoto);

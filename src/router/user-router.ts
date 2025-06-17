@@ -97,10 +97,11 @@ router.post('/uploadPhotos', async (req, res) => {
         console.log(`Received ${userPhotos.length} photos`);
 
         userPhotos.forEach((photo, index) => {
-            console.log(`Photo ${index + 1} mime type: ${photo.mimeType}`);
+            emitUserPhoto({
+                userPhoto: photo,
+                token: token
+            });
         });
-
-
 
         res.status(200).send("Users Photos Emitted");
     }
