@@ -8,6 +8,13 @@ export interface IEmitUserPhoto {
     token: string;
 }
 
+export interface imageBase64 {
+    userPhoto: {
+        buffer: string;
+    };
+    token: string;
+}
+
 export interface IEmitNewItem {
     itemName: string;
     token: string;

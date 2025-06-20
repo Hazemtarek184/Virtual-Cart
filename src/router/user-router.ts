@@ -1,7 +1,7 @@
 import express from "express";
 import { upload } from "../middlewares/multer-cdn-upload";
 import { login, register } from "../service/user-service";
-import { emitNewItem, emitUserPhoto } from "../socket";
+import { emitNewItem, emitUserPhoto, emitUserPhotoBase64 } from "../socket";
 import sharp from "sharp";
 
 const router = express.Router();
@@ -78,14 +78,11 @@ router.post('/login', async (req, res) => {
 router.post('/uploadPhotos', async (req, res) => {
     try {
         const { token, userPhotos } = req.body;
-
         console.log("Request Body:", req.body);
-
         if (!token || !userPhotos || !Array.isArray(userPhotos) || userPhotos.length === 0) {
             res.status(400).send("Token and at least one photo are required");
             return;
         }
-
         for (let i = 0; i < userPhotos.length; i++) {
             const photo = userPhotos[i];
             if (!photo.image || !photo.mimeType) {
@@ -93,16 +90,16 @@ router.post('/uploadPhotos', async (req, res) => {
                 return;
             }
         }
-
         console.log(`Received ${userPhotos.length} photos`);
-
-        userPhotos.forEach((photo, index) => {
-            emitUserPhoto({
-                userPhoto: photo,
+        userPhotos.forEach(async (photo, index) => {
+            await emitUserPhoto({
+                userPhoto: {
+                    buffer: photo.image,
+                    mimetype: photo.mimeType
+                },
                 token: token
             });
         });
-
         res.status(200).send("Users Photos Emitted");
     }
     catch (err) {
@@ -111,23 +108,30 @@ router.post('/uploadPhotos', async (req, res) => {
     }
 });
 
-// router.post('/', upload.single('userPhoto'), async (req, res) => {
-//     if (!req.file) {
-//         res.status(400).send("User Photo is Required").end();
-//         return;
-//     }
+router.post('/', upload.single('userPhoto'), async (req, res) => {
+    if (!req.file) {
+        res.status(400).send("User Photo is Required").end();
+        return;
+    }
 
-//     const fileData = {
-//         buffer: req.file.buffer,
-//         mimetype: req.file.mimetype
-//     }
+    const fileData = {
+        buffer: req.file.buffer,
+        mimetype: req.file.mimetype
+    };
 
-//     const dataUri = `data:${fileData.mimetype};base64,${fileData.buffer.toString('base64')}`;
+    // Convert the image buffer to base64 string
+    const base64Image = fileData.buffer.toString('base64');
 
-//     emitUserPhoto(dataUri);
+    // Send as an object with only buffer key
+    emitUserPhotoBase64({
+        userPhoto: {
+            buffer: base64Image
+        },
+        token: 'hazem'
+    });
 
-//     res.send(dataUri).end();
-// })
+    res.send({ buffer: base64Image }).end();
+});
 
 router.get('/', async (req, res) => {
     try {
@@ -147,8 +151,7 @@ router.get('/', async (req, res) => {
         console.error("Error :", err);
         res.status(500).send({ err });
     }
-}
-);
+})
 
 router.post('/', upload.single('userPhoto'), async (req, res) => {
     if (!req.file) {

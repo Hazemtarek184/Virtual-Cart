@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
 import { socketIo as io } from ".";
-import { IEmitNewItem, IEmitUserPhoto, IPhotoType } from "./types/commonTypes";
+import { IEmitNewItem, IEmitUserPhoto, imageBase64, IPhotoType } from "./types/commonTypes";
 
 io.on("connection", (socket: Socket) => {
     console.log("New client connected");
@@ -17,7 +17,12 @@ io.on("connection", (socket: Socket) => {
 })
 
 export const emitUserPhoto = ({ userPhoto, token }: IEmitUserPhoto) => {
-    io.emit("userPhoto", { "token": token, "image_base64": userPhoto });
+    io.emit("userPhoto", { "token": token, "image_base64": { buffer: userPhoto.buffer.toString ? userPhoto.buffer.toString('base64') : userPhoto.buffer } });
+    console.log("User photo emitted : ", userPhoto);
+};
+
+export const emitUserPhotoBase64 = ({ userPhoto, token }: imageBase64) => {
+    io.emit("userPhoto", { "token": token, "image_base64": { buffer: userPhoto.buffer } });
     console.log("User photo emitted : ", userPhoto);
 };
 
